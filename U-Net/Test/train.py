@@ -10,6 +10,7 @@ from tqdm import tqdm
 def train():
     # 设备设置：自动判断GPU/CPU
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
     print(f"使用设备: {device}")
     
     # 模型初始化
@@ -38,7 +39,7 @@ def train():
     total_start_time = time.time()  # 记录总训练开始时间
 
     # 计算预热的总步数
-    toral_warmup_steps = warmup_epochs * len(train_loader)
+    total_warmup_steps = warmup_epochs * len(train_loader)
     current_step = 0
 
     """
@@ -82,16 +83,14 @@ def train():
 
             # 学习率预热
             current_step += 1
-            if current_step <= toral_warmup_steps:
+            if current_step <= total_warmup_steps:
                 # 线性预热: lr = initial_lr * (current_step / total_warmup_steps)
-                warmup_lr = base_lr * (current_step / toral_warmup_steps)
+                warmup_lr = base_lr * (current_step / total_warmup_steps)
                 # 更新优化器的学习率
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = warmup_lr
 
             images, labels = images.to(device), labels.to(device)
-            # optimizer.zero_grad() # 梯度清零
-            
             outputs = model(images)  # 前向传播
             loss = loss_fn(outputs, labels)  # 计算损失
             optimizer.zero_grad()  # 梯度清零
@@ -102,21 +101,6 @@ def train():
 
             # 调用学习率调度器, 调整学习率
             # scheduler.step()
-
-            # # 每save_interval个epoch保存一次检查点
-            # if(epoch + 1) % save_interval == 0 or (epoch + 1) == total_epochs:
-            #     checkpoint = {
-            #         'epoch': epoch + 1,
-            #         'model_state_dict': model.state_dict(),           # 保存模型参数
-            #         'optimizer_state_dict': optimizer.state_dict(),   # 保存优化器参数
-            #         # 'scheduler_state_dict': scheduler.state_dict(), # 保存学习率调度器参数
-            #         'loss': loss.item(),                              # 保存当前checkpoint损失
-            #     }
-            # # 保存路径包含epoch信息
-            # checkpoint_path = f'Test/checkpoint/checkpoint_epoch_{epoch+1}.pth'
-            # print(f"The checkpoint is being saved. Please wait for a moment...")
-            # torch.save(checkpoint, checkpoint_path)
-            # print(f"Checkpoint saved at epoch : {checkpoint_path}")  # 打印保存信息
 
             # 更新进度条信息（显示当前批次的损失）
             batch_time = time.time() - batch_start_time
@@ -170,7 +154,8 @@ def train():
                 'loss': loss.item(),                              # 保存当前checkpoint损失
             }
         # 保存路径包含epoch信息
-        checkpoint_path = f'Test/checkpoint/checkpoint_epoch_{epoch+1}.pth'
+        checkpoint_path = f'./U-Net/Test/checkpoint/checkpoint_epoch_{epoch+1}.pth'
+        # checkpoint_path = f'./Myproject/U-Net/Test/checkpoint/checkpoint_epoch_{epoch+1}.pth' # 星鸾云配置
         print(f"The checkpoint is being saved. Please wait for a moment...")
         torch.save(checkpoint, checkpoint_path)
         print(f"Checkpoint saved at epoch : {checkpoint_path}")  # 打印保存信息
@@ -178,7 +163,8 @@ def train():
         # ─── 保存最优模型 ───
         if test_acc > best_test_acc:
             best_test_acc = test_acc
-            torch.save(model.state_dict(), 'Test/Best_UNet_CIFAR10.pth')
+            torch.save(model.state_dict(), './U-Net/Test/checkpoint/Best_UNet_CIFAR10.pth')
+            # torch.save(model.state_dict(), './Myproject/U-Net/Test/checkpoint/Best_UNet_CIFAR10.pth') # 星鸾云配置
         
         epoch_time = time.time() - epoch_start_time  # 当前轮次总耗时
         total_elapsed_time = time.time() - total_start_time  # 总耗时
